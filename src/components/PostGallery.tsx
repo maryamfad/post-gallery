@@ -1,5 +1,6 @@
 import { useQuery, gql } from "@apollo/client";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 interface GetPostsResponse {
 	posts: {
@@ -41,7 +42,7 @@ interface PostNode {
 	subscribersCount: number;
 }
 interface PageInfo {
-	endCursor: string | null;
+	endCursor: string;
 	hasNextPage: boolean;
 }
 
@@ -72,15 +73,9 @@ interface GetPostsVariables {
 	orderByString?: string | null;
 	reverse?: boolean | null;
 	spaceIds?: string[];
+	after?: string | null;
 }
-const variables: GetPostsVariables = {
-	filterBy: [],
-	limit: 9,
-	// postTypeIds: ["vBnK4XeS3ZrSmZj"],
-	orderByString: "publishedAt",
-	reverse: true,
-	// spaceIds: ["WxXxnvPGyAu9"],
-};
+
 const GET_POSTS = gql`
 	query GetPosts(
 		$after: String
@@ -159,22 +154,57 @@ const isImage = (media: Media): media is Image => {
 };
 
 const PostGallery: React.FC = () => {
-	const { data, loading, error } = useQuery<
+	const [posts, setPosts] = useState<PostNode[]>([]);
+	const variables: GetPostsVariables = {
+		filterBy: [],
+		limit: 9,
+		// postTypeIds: ["vBnK4XeS3ZrSmZj"],
+		orderByString: "publishedAt",
+		reverse: true,
+		// spaceIds: ["WxXxnvPGyAu9"],
+	};
+	const { data, loading, error, fetchMore } = useQuery<
 		GetPostsResponse,
 		GetPostsVariables
 	>(GET_POSTS, {
 		variables: variables,
+		onCompleted: (data) => {
+			setPosts((prevPosts) => [...prevPosts, ...data.posts.nodes]);
+		},
 	});
 
 	if (loading) return <p>Loading...</p>;
 	if (error) return <p>Error loading posts.</p>;
+
+	const handleLoadMore = () => {
+		fetchMore({
+			variables: {
+				after: data?.posts.pageInfo.endCursor,
+			},
+			updateQuery: (previousResult, { fetchMoreResult }) => {
+				if (!fetchMoreResult) return previousResult;
+				const newPosts = [
+					...previousResult.posts.nodes,
+					...fetchMoreResult.posts.nodes,
+				];
+
+				setPosts(newPosts);
+				return {
+					posts: {
+						...fetchMoreResult.posts,
+						nodes: newPosts,
+					},
+				};
+			},
+		});
+	};
 
 	return (
 		<div className="post-gallery container mx-auto p-3 grid sm:grid-cols-1 md:grid-cols-3 gap-8 ">
 			{data?.posts.nodes.length === 0 && (
 				<p className="text-center text-gray-500">No posts available</p>
 			)}
-			{data?.posts.nodes.map((post) => (
+			{posts?.map((post) => (
 				<div className="block max-w-lg rounded-lg bg-white text-surface shadow-secondary-1 dark:bg-surface-dark dark:text-white border border-gray-300 gap-18">
 					<div className="relative overflow-hidden bg-cover bg-no-repeat">
 						{post.fields.filter(
@@ -239,7 +269,15 @@ const PostGallery: React.FC = () => {
 			))}
 
 			<div></div>
-			<div className="pagination w-full text-center mt-8 block flex items-center justify-center"></div>
+
+			{data?.posts.pageInfo.hasNextPage && (
+				<button
+					onClick={handleLoadMore}
+					className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+				>
+					Load More
+				</button>
+			)}
 		</div>
 	);
 };
