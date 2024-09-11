@@ -172,6 +172,7 @@ const PostGallery: React.FC = () => {
 			setPosts((prevPosts) => [...prevPosts, ...data.posts.nodes]);
 		},
 	});
+console.log(data);
 
 	if (loading) return <p>Loading...</p>;
 	if (error) return <p>Error loading posts.</p>;
@@ -204,8 +205,11 @@ const PostGallery: React.FC = () => {
 			{data?.posts.nodes.length === 0 && (
 				<p className="text-center text-gray-500">No posts available</p>
 			)}
-			{posts?.map((post) => (
-				<div className="block max-w-lg rounded-lg bg-white text-surface shadow-secondary-1 dark:bg-surface-dark dark:text-white border border-gray-300 gap-18">
+			{posts?.map((post, index) => (
+				<div
+					key={index}
+					className="block max-w-lg rounded-lg bg-white text-surface shadow-secondary-1 dark:bg-surface-dark dark:text-white border border-gray-300 gap-18"
+				>
 					<div className="relative overflow-hidden bg-cover bg-no-repeat">
 						{post.fields.filter(
 							(field) => field.key === "cover_image"
@@ -217,8 +221,9 @@ const PostGallery: React.FC = () => {
 										isImage
 									)
 								)
-								.map((image) => (
+								.map((image, index) => (
 									<img
+										key={index}
 										className="rounded-t-lg"
 										src={image.url}
 										alt=""

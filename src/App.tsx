@@ -10,7 +10,6 @@ function App() {
 			<Router>
 				<Routes>
 					<Route path="/" element={<PostGallery />} />
-					<Route path="/page/:pageNumber" element={<PostGallery />} />
 					<Route path="/post/:id" element={<PostDetails />} />
 					<Route path="*" element={<NotFound />} />
 				</Routes>
