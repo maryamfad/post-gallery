@@ -90,7 +90,40 @@ const mocks = [
 			query: GET_POSTS,
 			variables: {
 				filterBy: [],
-				limit: 1,
+				limit: 9,
+				orderByString: "publishedAt",
+				reverse: true,
+				after: null,
+			},
+		},
+		result: {
+			data: mockPostsData,
+		},
+	// },
+	// {
+	// 	request: {
+	// 		query: GET_POSTS,
+	// 		variables: {
+	// 			filterBy: [],
+	// 			limit: 9,
+	// 			orderByString: "publishedAt",
+	// 			reverse: true,
+	// 			after: "cursor123",
+	// 		},
+	// 	},
+	// 	result: {
+	// 		data: fetchMoreMockPosts,
+	// 	},
+	},
+];
+
+const mocks2 = [
+	{
+		request: {
+			query: GET_POSTS,
+			variables: {
+				filterBy: [],
+				limit: 9,
 				orderByString: "publishedAt",
 				reverse: true,
 				after: null,
@@ -105,7 +138,7 @@ const mocks = [
 			query: GET_POSTS,
 			variables: {
 				filterBy: [],
-				limit: 1,
+				limit: 9,
 				orderByString: "publishedAt",
 				reverse: true,
 				after: "cursor123",
@@ -185,7 +218,7 @@ describe("PostGallery Component", () => {
 
 	it("loads more posts when 'Load More' button is clicked", async () => {
 		render(
-			<MockedProvider mocks={mocks} addTypename={false}>
+			<MockedProvider mocks={mocks2} addTypename={false}>
 				<Router>
 					<PostGallery />
 				</Router>

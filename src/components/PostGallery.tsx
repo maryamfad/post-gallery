@@ -28,7 +28,7 @@ interface Field {
 	value: string;
 	relationEntities: RelationEntities;
 }
-interface Edge{
+interface Edge {
 	cursor: string;
 }
 interface PostNode {
@@ -131,7 +131,6 @@ export const GET_POSTS = gql`
 							... on Image {
 								url
 								name
-								
 							}
 							... on Emoji {
 								id
@@ -148,7 +147,7 @@ export const GET_POSTS = gql`
 				createdAt
 				subscribersCount
 			}
-			edges{
+			edges {
 				cursor
 			}
 		}
@@ -160,12 +159,12 @@ const PostGallery: React.FC = () => {
 	const [posts, setPosts] = useState<PostNode[]>([]);
 	const variables: GetPostsVariables = {
 		filterBy: [],
-		limit: 1,
+		limit: 9,
 		// postTypeIds: ["vBnK4XeS3ZrSmZj"],
 		orderByString: "publishedAt",
 		reverse: true,
 		// spaceIds: ["WxXxnvPGyAu9"],
-		after:null
+		after: null,
 	};
 	const { data, loading, error, fetchMore } = useQuery<
 		GetPostsResponse,
@@ -179,21 +178,13 @@ const PostGallery: React.FC = () => {
 
 	if (loading) return <p>Loading...</p>;
 	if (error) return <p>Error loading posts.</p>;
-console.log("dataaa", data?.posts.nodes);
-console.log("loadinggg", loading);
-console.log("erorrrr", error);
-
 
 	const handleLoadMore = () => {
-		console.log("Load More button clicked");
 		fetchMore({
 			variables: {
 				after: data?.posts.pageInfo.endCursor,
 			},
 			updateQuery: (previousResult, { fetchMoreResult }) => {
-				console.log("updateQuery called");
-				console.log("fetchMoreResult",fetchMoreResult);
-				
 				if (!fetchMoreResult) return previousResult;
 				const newPosts = [
 					...previousResult.posts.nodes,
@@ -201,13 +192,13 @@ console.log("erorrrr", error);
 				];
 
 				setPosts(newPosts);
-				console.log("posts",{
+				console.log("posts", {
 					posts: {
 						...fetchMoreResult.posts,
 						nodes: newPosts,
 					},
 				});
-				
+
 				return {
 					posts: {
 						...fetchMoreResult.posts,

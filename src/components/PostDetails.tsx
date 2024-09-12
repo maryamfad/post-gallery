@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery, gql } from "@apollo/client";
 import { useParams } from "react-router-dom";
 
@@ -62,7 +63,7 @@ interface GetAPostVariables {
 interface GetAPostResponse {
 	post: PostNode;
 }
-const GET_A_POST = gql`
+export const GET_A_POST = gql`
 	query GetAPost($id: ID!) {
 		post(id: $id) {
 			id
@@ -80,8 +81,6 @@ const GET_A_POST = gql`
 						... on Image {
 							url
 							name
-							width
-							height
 						}
 						... on Emoji {
 							id
@@ -109,13 +108,16 @@ const PostDetails = () => {
 	if (loading) return <p>Loading...</p>;
 	if (error) return <p>Error loading posts.</p>;
 
-	const isImage = (media: Media): media is Image => {
-		return media.__typename === "Image";
-	};
-	const coverImage = data?.post.fields
+	const isImage = (media: Media) => media.__typename === "Image";
+	const coverImageUrl = data?.post.fields
 		.filter((field) => field.key === "cover_image")
 		.flatMap((field) => field.relationEntities?.medias?.filter(isImage))
 		.map((image) => image.url)[0];
+
+	const coverImageName = data?.post.fields
+		.filter((field) => field.key === "cover_image")
+		.flatMap((field) => field.relationEntities?.medias?.filter(isImage))
+		.map((image) => image.name)[0];
 
 	const title =
 		data?.post.fields
@@ -126,14 +128,15 @@ const PostDetails = () => {
 		data?.post.fields
 			.filter((field) => field.key === "content")
 			.map((field) => field.value.replace(/"/g, ""))[0] || "";
+console.log("Date",new Date("2024-09-10T00:00:00.000Z").toLocaleDateString())
 	return (
 		<div className="block rounded-lg bg-white shadow-secondary-1  text-surface border border-customGray w-full max-w-4xl shadow-xl">
 			<div className="relative overflow-hidden bg-cover bg-no-repeat w-full">
-				{coverImage ? (
+				{coverImageUrl ? (
 					<img
 						className="rounded-t-lg"
-						src={coverImage}
-						alt="Cover Image"
+						src={coverImageUrl}
+						alt={coverImageName}
 					/>
 				) : (
 					<img
@@ -154,12 +157,13 @@ const PostDetails = () => {
 				/>
 
 				<p className="text-base text-surface/75 dark:text-neutral-300">
-					<small>
-						Created at:{" "}
-						{data?.post?.createdAt
-							? new Date(data.post.createdAt).toLocaleDateString()
-							: ""}
-					</small>
+					{data?.post?.createdAt ? (
+						<small>
+							Created at: {new Date(data.post.createdAt).toLocaleDateString('en-CA')}
+						</small>
+					) : (
+						""
+					)}
 				</p>
 			</div>
 		</div>
