@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery, gql } from "@apollo/client";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -27,6 +28,9 @@ interface Field {
 	value: string;
 	relationEntities: RelationEntities;
 }
+interface Edge{
+	cursor: string;
+}
 interface PostNode {
 	createdAt: string;
 	id: string;
@@ -40,6 +44,7 @@ interface PostNode {
 	description: string;
 	status: string;
 	subscribersCount: number;
+	edges: Edge[];
 }
 interface PageInfo {
 	endCursor: string;
@@ -76,7 +81,7 @@ interface GetPostsVariables {
 	after?: string | null;
 }
 
-const GET_POSTS = gql`
+export const GET_POSTS = gql`
 	query GetPosts(
 		$after: String
 		$before: String
@@ -110,8 +115,6 @@ const GET_POSTS = gql`
 			}
 			nodes {
 				id
-				slug
-				language
 				mappingFields {
 					key
 					type
@@ -128,8 +131,7 @@ const GET_POSTS = gql`
 							... on Image {
 								url
 								name
-								width
-								height
+								
 							}
 							... on Emoji {
 								id
@@ -146,22 +148,24 @@ const GET_POSTS = gql`
 				createdAt
 				subscribersCount
 			}
+			edges{
+				cursor
+			}
 		}
 	}
 `;
-const isImage = (media: Media): media is Image => {
-	return media.__typename === "Image";
-};
+const isImage = (media: Media) => media.__typename === "Image";
 
 const PostGallery: React.FC = () => {
 	const [posts, setPosts] = useState<PostNode[]>([]);
 	const variables: GetPostsVariables = {
 		filterBy: [],
-		limit: 9,
+		limit: 1,
 		// postTypeIds: ["vBnK4XeS3ZrSmZj"],
 		orderByString: "publishedAt",
 		reverse: true,
 		// spaceIds: ["WxXxnvPGyAu9"],
+		after:null
 	};
 	const { data, loading, error, fetchMore } = useQuery<
 		GetPostsResponse,
@@ -172,17 +176,24 @@ const PostGallery: React.FC = () => {
 			setPosts((prevPosts) => [...prevPosts, ...data.posts.nodes]);
 		},
 	});
-console.log(data);
 
 	if (loading) return <p>Loading...</p>;
 	if (error) return <p>Error loading posts.</p>;
+console.log("dataaa", data?.posts.nodes);
+console.log("loadinggg", loading);
+console.log("erorrrr", error);
+
 
 	const handleLoadMore = () => {
+		console.log("Load More button clicked");
 		fetchMore({
 			variables: {
 				after: data?.posts.pageInfo.endCursor,
 			},
 			updateQuery: (previousResult, { fetchMoreResult }) => {
+				console.log("updateQuery called");
+				console.log("fetchMoreResult",fetchMoreResult);
+				
 				if (!fetchMoreResult) return previousResult;
 				const newPosts = [
 					...previousResult.posts.nodes,
@@ -190,6 +201,13 @@ console.log(data);
 				];
 
 				setPosts(newPosts);
+				console.log("posts",{
+					posts: {
+						...fetchMoreResult.posts,
+						nodes: newPosts,
+					},
+				});
+				
 				return {
 					posts: {
 						...fetchMoreResult.posts,
@@ -226,16 +244,14 @@ console.log(data);
 										key={index}
 										className="rounded-t-lg"
 										src={image.url}
-										alt=""
+										alt={image.name}
 									/>
 								))
 						) : (
 							<img
 								className="rounded-t-lg"
 								src="https://tribe-s3-production.imgix.net/ymDqIfItLVeI3QjOsfib7?fit=max&w=1000&auto=compress,format"
-								alt=""
-								width={"1000px"}
-								height={"563px"}
+								alt="Cover Image"
 							/>
 						)}
 					</div>
@@ -255,7 +271,6 @@ console.log(data);
 							{post.description.split("\n")[1]}
 						</p>
 					</div>
-					{post.hasMoreContent && <div>See more</div>}
 					<div className="p-6">
 						<a
 							type="button"

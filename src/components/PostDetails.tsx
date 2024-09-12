@@ -129,7 +129,19 @@ const PostDetails = () => {
 	return (
 		<div className="block rounded-lg bg-white shadow-secondary-1  text-surface border border-customGray w-full max-w-4xl shadow-xl">
 			<div className="relative overflow-hidden bg-cover bg-no-repeat w-full">
-				<img className="rounded-t-lg" src={coverImage} alt="" />
+				{coverImage ? (
+					<img
+						className="rounded-t-lg"
+						src={coverImage}
+						alt="Cover Image"
+					/>
+				) : (
+					<img
+						className="rounded-t-lg"
+						src="https://tribe-s3-production.imgix.net/ymDqIfItLVeI3QjOsfib7?fit=max&w=1000&auto=compress,format"
+						alt="Cover Image"
+					/>
+				)}
 			</div>
 			<div className="p-6">
 				<h5 className="mb-4 mt-4 text-2xl font-medium leading-tight">
