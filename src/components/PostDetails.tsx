@@ -128,7 +128,7 @@ const PostDetails = () => {
 		data?.post.fields
 			.filter((field) => field.key === "content")
 			.map((field) => field.value.replace(/"/g, ""))[0] || "";
-console.log("Date",new Date("2024-09-10T00:00:00.000Z").toLocaleDateString())
+			
 	return (
 		<div className="block rounded-lg bg-white shadow-secondary-1  text-surface border border-customGray w-full max-w-4xl shadow-xl">
 			<div className="relative overflow-hidden bg-cover bg-no-repeat w-full">

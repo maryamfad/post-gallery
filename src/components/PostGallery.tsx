@@ -1,12 +1,15 @@
 import React from "react";
-import { useQuery, gql } from "@apollo/client";
+import { useQuery, gql, useMutation } from "@apollo/client";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { FaRegHeart, FaHeart } from "react-icons/fa";
+import { ADD_REACTION } from "../graphql/mutations/addReaction";
+import { REMOVE_REACTION } from "../graphql/mutations/removeReaction";
 
 interface GetPostsResponse {
 	posts: {
 		totalCount: number;
-		nodes: PostNode[];
+		nodes: Post[];
 		pageInfo: PageInfo;
 	};
 }
@@ -31,7 +34,12 @@ interface Field {
 interface Edge {
 	cursor: string;
 }
-interface PostNode {
+interface PostReactionDetail {
+	count: number;
+	reacted: boolean;
+	reaction: string;
+}
+interface Post {
 	createdAt: string;
 	id: string;
 	slug: string;
@@ -45,6 +53,9 @@ interface PostNode {
 	status: string;
 	subscribersCount: number;
 	edges: Edge[];
+	primaryReactionType: ReactionType;
+	reactions: [PostReactionDetail];
+	allowedReactions: [string];
 }
 interface PageInfo {
 	endCursor: string;
@@ -79,6 +90,11 @@ interface GetPostsVariables {
 	reverse?: boolean | null;
 	spaceIds?: string[];
 	after?: string | null;
+}
+enum ReactionType {
+	EMOJI_BASE,
+	LIKE_BASE,
+	VOTE_BASE,
 }
 
 export const GET_POSTS = gql`
@@ -139,6 +155,12 @@ export const GET_POSTS = gql`
 						}
 					}
 				}
+				primaryReactionType
+				reactions {
+					reacted
+					reaction
+				}
+				allowedReactions
 				shortContent
 				hasMoreContent
 				title
@@ -155,8 +177,68 @@ export const GET_POSTS = gql`
 `;
 const isImage = (media: Media) => media.__typename === "Image";
 
+type PostLikesState = Record<string, boolean>;
+
 const PostGallery: React.FC = () => {
-	const [posts, setPosts] = useState<PostNode[]>([]);
+	const [posts, setPosts] = useState<Post[]>([]);
+	const [postLikes, setPostLikes] = useState<PostLikesState>({});
+
+	console.log("postLiles", postLikes);
+
+	const [addReaction] = useMutation(ADD_REACTION, {
+		onCompleted: (data) => {
+			console.log("Add reaction completed:", data);
+		},
+		onError: (error) => {
+			console.error("Add reaction error:", error);
+		},
+	});
+
+	const [removeReaction] = useMutation(REMOVE_REACTION, {
+		onCompleted: (data) => {
+			console.log("Remove reaction completed:", data);
+		},
+		onError: (error) => {
+			console.error("Remove reaction error:", error);
+		},
+	});
+
+	const handleLikeClick = async (postId: string) => {
+		try {
+			if (postLikes[postId]) {
+				const { data } = await removeReaction({
+					variables: {
+						postId,
+						overrideSingleChoiceReactions: true,
+						reaction: "upvote",
+					},
+				});
+				console.log("remove reaction data: " + JSON.stringify(data));
+
+				setPostLikes((prevLikes) => ({
+					...prevLikes,
+					[postId]: false,
+				}));
+			} else {
+				await addReaction({
+					variables: {
+						postId,
+						input: {
+							reaction: "upvote",
+							overrideSingleChoiceReactions: true,
+						},
+					},
+				});
+				setPostLikes((prevLikes) => ({
+					...prevLikes,
+					[postId]: true,
+				}));
+			}
+		} catch (error) {
+			console.error("Error liking post:", error);
+		}
+	};
+
 	const variables: GetPostsVariables = {
 		filterBy: [],
 		limit: 9,
@@ -175,7 +257,24 @@ const PostGallery: React.FC = () => {
 			setPosts((prevPosts) => [...prevPosts, ...data.posts.nodes]);
 		},
 	});
+	useEffect(() => {
+		if (data?.posts) {
+			const likesState = data?.posts.nodes.reduce((acc, post) => {
+				const hasReaction =
+					post.reactions.filter(
+						(reaction) => reaction.reaction === "upvote"
+					).length > 0;
+				console.log("hasReaction: " + hasReaction, post);
 
+				return {
+					...acc,
+					[post.id]: hasReaction,
+				};
+			}, {});
+
+			setPostLikes(likesState);
+		}
+	}, [data]);
 	if (loading) return <p>Loading...</p>;
 	if (error) return <p>Error loading posts.</p>;
 
@@ -192,12 +291,6 @@ const PostGallery: React.FC = () => {
 				];
 
 				setPosts(newPosts);
-				console.log("posts", {
-					posts: {
-						...fetchMoreResult.posts,
-						nodes: newPosts,
-					},
-				});
 
 				return {
 					posts: {
@@ -263,18 +356,28 @@ const PostGallery: React.FC = () => {
 						</p>
 					</div>
 					<div className="p-6">
-						<a
+						{/* <a
 							type="button"
 							className="pointer-events-auto me-5 inline-block cursor-pointer rounded text-base font-normal leading-normal text-primary transition duration-150 ease-in-out hover:text-primary-600 focus:text-primary-600 focus:outline-none focus:ring-0 active:text-primary-700 dark:text-primary-400"
 						>
 							like
-						</a>
-						<a
-							type="button"
-							className="pointer-events-auto inline-block cursor-pointer rounded text-base font-normal leading-normal text-primary transition duration-150 ease-in-out hover:text-primary-600 focus:text-primary-600 focus:outline-none focus:ring-0 active:text-primary-700 dark:text-primary-400"
+						</a> */}
+						<button
+							onClick={() => handleLikeClick(post.id)}
+							className="flex items-center space-x-2 px-4 py-2 bg-white border rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 focus:outline-none"
 						>
-							Share
-						</a>
+							{postLikes[post.id] ? (
+								<FaHeart
+									className="text-red-500 transition duration-300 ease-in-out"
+									size={24}
+								/>
+							) : (
+								<FaRegHeart
+									className="text-gray-500 transition duration-300 ease-in-out hover:text-red-500"
+									size={24}
+								/>
+							)}
+						</button>
 					</div>
 				</div>
 			))}
