@@ -3,6 +3,7 @@ import { useQuery, gql, useMutation } from "@apollo/client";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
+import { BiUpvote, BiSolidUpvote } from "react-icons/bi";
 import { ADD_REACTION } from "../graphql/mutations/addReaction";
 import { REMOVE_REACTION } from "../graphql/mutations/removeReaction";
 
@@ -56,6 +57,8 @@ interface Post {
 	primaryReactionType: ReactionType;
 	reactions: [PostReactionDetail];
 	allowedReactions: [string];
+	positiveReactions: [string];
+	allowedEmojis: [string];
 }
 interface PageInfo {
 	endCursor: string;
@@ -168,6 +171,8 @@ export const GET_POSTS = gql`
 				status
 				createdAt
 				subscribersCount
+				positiveReactions
+				allowedEmojis
 			}
 			edges {
 				cursor
@@ -175,6 +180,7 @@ export const GET_POSTS = gql`
 		}
 	}
 `;
+
 const isImage = (media: Media) => media.__typename === "Image";
 
 type PostLikesState = Record<string, boolean>;
@@ -182,8 +188,9 @@ type PostLikesState = Record<string, boolean>;
 const PostGallery: React.FC = () => {
 	const [posts, setPosts] = useState<Post[]>([]);
 	const [postLikes, setPostLikes] = useState<PostLikesState>({});
+	const [postUpvotes, setPostUpvotes] = useState<PostLikesState>({});
 
-	console.log("postLiles", postLikes);
+	let reaction = "";
 
 	const [addReaction] = useMutation(ADD_REACTION, {
 		onCompleted: (data) => {
@@ -205,34 +212,54 @@ const PostGallery: React.FC = () => {
 
 	const handleLikeClick = async (postId: string) => {
 		try {
-			if (postLikes[postId]) {
-				const { data } = await removeReaction({
+			console.log(
+				(reaction === "like" && postLikes[postId]) ||
+					(reaction === "upvote" && postUpvotes[postId])
+			);
+
+			if (
+				(reaction === "like" && postLikes[postId]) ||
+				(reaction === "upvote" && postUpvotes[postId])
+			) {
+				await removeReaction({
 					variables: {
 						postId,
 						overrideSingleChoiceReactions: true,
-						reaction: "upvote",
+						reaction: reaction,
 					},
 				});
-				console.log("remove reaction data: " + JSON.stringify(data));
-
-				setPostLikes((prevLikes) => ({
-					...prevLikes,
-					[postId]: false,
-				}));
+				if (reaction === "like") {
+					setPostLikes((prevLikes) => ({
+						...prevLikes,
+						[postId]: false,
+					}));
+				} else {
+					setPostUpvotes((prevUpvotes) => ({
+						...prevUpvotes,
+						[postId]: false,
+					}));
+				}
 			} else {
 				await addReaction({
 					variables: {
 						postId,
 						input: {
-							reaction: "upvote",
+							reaction: reaction,
 							overrideSingleChoiceReactions: true,
 						},
 					},
 				});
-				setPostLikes((prevLikes) => ({
-					...prevLikes,
-					[postId]: true,
-				}));
+				if (reaction === "like") {
+					setPostLikes((prevLikes) => ({
+						...prevLikes,
+						[postId]: true,
+					}));
+				} else {
+					setPostUpvotes((prevUpvotes) => ({
+						...prevUpvotes,
+						[postId]: true,
+					}));
+				}
 			}
 		} catch (error) {
 			console.error("Error liking post:", error);
@@ -242,10 +269,8 @@ const PostGallery: React.FC = () => {
 	const variables: GetPostsVariables = {
 		filterBy: [],
 		limit: 9,
-		// postTypeIds: ["vBnK4XeS3ZrSmZj"],
 		orderByString: "publishedAt",
 		reverse: true,
-		// spaceIds: ["WxXxnvPGyAu9"],
 		after: null,
 	};
 	const { data, loading, error, fetchMore } = useQuery<
@@ -260,19 +285,31 @@ const PostGallery: React.FC = () => {
 	useEffect(() => {
 		if (data?.posts) {
 			const likesState = data?.posts.nodes.reduce((acc, post) => {
-				const hasReaction =
+				const hasLike =
 					post.reactions.filter(
-						(reaction) => reaction.reaction === "upvote"
+						(reaction) => reaction.reaction === "like"
 					).length > 0;
-				console.log("hasReaction: " + hasReaction, post);
 
 				return {
 					...acc,
-					[post.id]: hasReaction,
+					[post.id]: hasLike,
+				};
+			}, {});
+
+			const upvotesState = data?.posts.nodes.reduce((acc, post) => {
+				const hasUpvote =
+					post.reactions.filter(
+						(reaction) => reaction.reaction === "upvote"
+					).length > 0;
+
+				return {
+					...acc,
+					[post.id]: hasUpvote,
 				};
 			}, {});
 
 			setPostLikes(likesState);
+			setPostUpvotes(upvotesState);
 		}
 	}, [data]);
 	if (loading) return <p>Loading...</p>;
@@ -310,7 +347,7 @@ const PostGallery: React.FC = () => {
 			{posts?.map((post, index) => (
 				<div
 					key={index}
-					className="block max-w-lg rounded-lg bg-white text-surface shadow-secondary-1 dark:bg-surface-dark dark:text-white border border-gray-300 gap-18"
+					className="block max-w-lg rounded-lg bg-white text-surface shadow-secondary-1 dark:bg-surface-dark dark:text-white border border-gray-300 gap-18 shadow-md hover:shadow-lg transition-shadow"
 				>
 					<div className="relative overflow-hidden bg-cover bg-no-repeat">
 						{post.fields.filter(
@@ -339,7 +376,7 @@ const PostGallery: React.FC = () => {
 							/>
 						)}
 					</div>
-					<div className="p-6">
+					<div className="p-6 h-[250px]">
 						<Link
 							to={`/post/${post.id}`}
 							className="block hover:shadow-xl transition-shadow duration-200"
@@ -356,28 +393,48 @@ const PostGallery: React.FC = () => {
 						</p>
 					</div>
 					<div className="p-6">
-						{/* <a
-							type="button"
-							className="pointer-events-auto me-5 inline-block cursor-pointer rounded text-base font-normal leading-normal text-primary transition duration-150 ease-in-out hover:text-primary-600 focus:text-primary-600 focus:outline-none focus:ring-0 active:text-primary-700 dark:text-primary-400"
-						>
-							like
-						</a> */}
-						<button
-							onClick={() => handleLikeClick(post.id)}
-							className="flex items-center space-x-2 px-4 py-2 bg-white border rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 focus:outline-none"
-						>
-							{postLikes[post.id] ? (
-								<FaHeart
-									className="text-red-500 transition duration-300 ease-in-out"
-									size={24}
-								/>
-							) : (
-								<FaRegHeart
-									className="text-gray-500 transition duration-300 ease-in-out hover:text-red-500"
-									size={24}
-								/>
-							)}
-						</button>
+						{post.allowedReactions.includes("like") && (
+							<button
+								onClick={() => {
+									reaction = "like";
+									handleLikeClick(post.id);
+								}}
+								className="flex items-center space-x-2 ml-1 px-4 py-2 bg-white border rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 focus:outline-none"
+							>
+								{postLikes[post.id] ? (
+									<FaHeart
+										className="text-red-500 transition duration-300 ease-in-out"
+										size={24}
+									/>
+								) : (
+									<FaRegHeart
+										className="text-gray-500 transition duration-300 ease-in-out hover:text-red-500"
+										size={24}
+									/>
+								)}
+							</button>
+						)}
+						{post.allowedReactions.includes("upvote") && (
+							<button
+								onClick={() => {
+									reaction = "upvote";
+									handleLikeClick(post.id);
+								}}
+								className="flex items-center ml-1 space-x-2 px-4 py-2 bg-white border rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 focus:outline-none"
+							>
+								{postUpvotes[post.id] ? (
+									<BiSolidUpvote
+										className="text-gray-500 transition duration-300 ease-in-out "
+										size={24}
+									/>
+								) : (
+									<BiUpvote
+										className="text-gray-500 transition duration-300 ease-in-out"
+										size={24}
+									/>
+								)}
+							</button>
+						)}
 					</div>
 				</div>
 			))}
