@@ -212,10 +212,7 @@ const PostGallery: React.FC = () => {
 
 	const handleLikeClick = async (postId: string) => {
 		try {
-			console.log(
-				(reaction === "like" && postLikes[postId]) ||
-					(reaction === "upvote" && postUpvotes[postId])
-			);
+			
 
 			if (
 				(reaction === "like" && postLikes[postId]) ||
@@ -273,7 +270,7 @@ const PostGallery: React.FC = () => {
 		reverse: true,
 		after: null,
 	};
-	const { data, loading, error, fetchMore } = useQuery<
+	const { data, loading, error, fetchMore, refetch  } = useQuery<
 		GetPostsResponse,
 		GetPostsVariables
 	>(GET_POSTS, {
@@ -283,6 +280,7 @@ const PostGallery: React.FC = () => {
 		},
 	});
 	useEffect(() => {
+		refetch();
 		if (data?.posts) {
 			const likesState = data?.posts.nodes.reduce((acc, post) => {
 				const hasLike =
@@ -376,7 +374,7 @@ const PostGallery: React.FC = () => {
 							/>
 						)}
 					</div>
-					<div className="p-6 h-[250px]">
+					<div className="p-6 lg:h-[250px]">
 						<Link
 							to={`/post/${post.id}`}
 							className="block hover:shadow-xl transition-shadow duration-200"
