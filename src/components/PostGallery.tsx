@@ -1,11 +1,12 @@
 import React from "react";
-import { useQuery, gql, useMutation } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { BiUpvote, BiSolidUpvote } from "react-icons/bi";
 import { ADD_REACTION } from "../graphql/mutations/addReaction";
 import { REMOVE_REACTION } from "../graphql/mutations/removeReaction";
+import { GET_POSTS } from "../graphql/queries/getPosts";
 
 interface GetPostsResponse {
 	posts: {
@@ -100,87 +101,6 @@ enum ReactionType {
 	VOTE_BASE,
 }
 
-export const GET_POSTS = gql`
-	query GetPosts(
-		$after: String
-		$before: String
-		$excludePins: Boolean
-		$filterBy: [PostListFilterByInput!]
-		$limit: Int!
-		$offset: Int
-		$orderBy: PostListOrderByEnum
-		$orderByString: String
-		$postTypeIds: [String!]
-		$reverse: Boolean
-		$spaceIds: [ID!]
-	) {
-		posts(
-			after: $after
-			before: $before
-			excludePins: $excludePins
-			filterBy: $filterBy
-			limit: $limit
-			offset: $offset
-			orderBy: $orderBy
-			orderByString: $orderByString
-			postTypeIds: $postTypeIds
-			reverse: $reverse
-			spaceIds: $spaceIds
-		) {
-			totalCount
-			pageInfo {
-				endCursor
-				hasNextPage
-			}
-			nodes {
-				id
-				mappingFields {
-					key
-					type
-					value
-				}
-				fields {
-					key
-					value
-					relationEntities {
-						medias {
-							... on File {
-								url
-							}
-							... on Image {
-								url
-								name
-							}
-							... on Emoji {
-								id
-								text
-							}
-						}
-					}
-				}
-				primaryReactionType
-				reactions {
-					reacted
-					reaction
-				}
-				allowedReactions
-				shortContent
-				hasMoreContent
-				title
-				description
-				status
-				createdAt
-				subscribersCount
-				positiveReactions
-				allowedEmojis
-			}
-			edges {
-				cursor
-			}
-		}
-	}
-`;
-
 const isImage = (media: Media) => media.__typename === "Image";
 
 type PostLikesState = Record<string, boolean>;
@@ -191,6 +111,26 @@ const PostGallery: React.FC = () => {
 	const [postUpvotes, setPostUpvotes] = useState<PostLikesState>({});
 
 	let reaction = "";
+	const variables: GetPostsVariables = {
+		filterBy: [],
+		limit: 9,
+		orderByString: "publishedAt",
+		reverse: true,
+		after: null,
+	};
+
+	const { data, loading, error, fetchMore, refetch } = useQuery<
+		GetPostsResponse,
+		GetPostsVariables
+	>(GET_POSTS, {
+		variables: variables,
+		onCompleted: (data) => {
+			setPosts((prevPosts) => [...prevPosts, ...data.posts.nodes]);
+		},
+		onError: (error) => {
+			console.error("Get posts error:", error);
+		},
+	});
 
 	const [addReaction] = useMutation(ADD_REACTION, {
 		onCompleted: (data) => {
@@ -212,8 +152,6 @@ const PostGallery: React.FC = () => {
 
 	const handleLikeClick = async (postId: string) => {
 		try {
-			
-
 			if (
 				(reaction === "like" && postLikes[postId]) ||
 				(reaction === "upvote" && postUpvotes[postId])
@@ -263,22 +201,6 @@ const PostGallery: React.FC = () => {
 		}
 	};
 
-	const variables: GetPostsVariables = {
-		filterBy: [],
-		limit: 9,
-		orderByString: "publishedAt",
-		reverse: true,
-		after: null,
-	};
-	const { data, loading, error, fetchMore, refetch  } = useQuery<
-		GetPostsResponse,
-		GetPostsVariables
-	>(GET_POSTS, {
-		variables: variables,
-		onCompleted: (data) => {
-			setPosts((prevPosts) => [...prevPosts, ...data.posts.nodes]);
-		},
-	});
 	useEffect(() => {
 		refetch();
 		if (data?.posts) {
