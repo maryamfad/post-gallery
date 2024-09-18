@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useQuery, gql, useMutation } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import { useParams } from "react-router-dom";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { BiUpvote, BiSolidUpvote } from "react-icons/bi";
+import { GET_A_POST } from "../graphql/queries/getAPost";
 import { ADD_REACTION } from "../graphql/mutations/addReaction";
 import { REMOVE_REACTION } from "../graphql/mutations/removeReaction";
 
@@ -74,46 +75,21 @@ interface GetAPostVariables {
 interface GetAPostResponse {
 	post: PostNode;
 }
-export const GET_A_POST = gql`
-	query GetAPost($id: ID!) {
-		post(id: $id) {
-			id
-			title
-			shortContent
-			createdAt
-			reactions {
-				count
-				reaction
-			}
 
-			allowedReactions
-
-			fields {
-				key
-				value
-				relationEntities {
-					medias {
-						... on File {
-							url
-						}
-						... on Image {
-							url
-							name
-						}
-						... on Emoji {
-							id
-							text
-						}
-					}
-				}
-			}
-		}
-	}
-`;
 const PostDetails = () => {
 	const { id } = useParams<{ id: string }>();
 	const [hasLike, setHasLike] = useState(false);
 	const [hasUpvote, setHasUpvote] = useState(false);
+
+	const variables: GetAPostVariables = {
+		id: id ?? "",
+	};
+	const { data, loading, error } = useQuery<
+		GetAPostResponse,
+		GetAPostVariables
+	>(GET_A_POST, {
+		variables: variables,
+	});
 
 	const [addReaction] = useMutation(ADD_REACTION, {
 		onCompleted: (data) => {
@@ -131,16 +107,6 @@ const PostDetails = () => {
 		onError: (error) => {
 			console.error("Remove reaction error:", error);
 		},
-	});
-
-	const variables: GetAPostVariables = {
-		id: id ?? "",
-	};
-	const { data, loading, error } = useQuery<
-		GetAPostResponse,
-		GetAPostVariables
-	>(GET_A_POST, {
-		variables: variables,
 	});
 
 	useEffect(() => {
