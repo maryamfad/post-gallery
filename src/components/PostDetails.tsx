@@ -6,75 +6,7 @@ import { BiUpvote, BiSolidUpvote } from "react-icons/bi";
 import { GET_A_POST } from "../graphql/queries/getAPost";
 import { ADD_REACTION } from "../graphql/mutations/addReaction";
 import { REMOVE_REACTION } from "../graphql/mutations/removeReaction";
-
-interface PostMappingField {
-	key: string;
-	type: string;
-	value: string;
-}
-interface Field {
-	key: string;
-	value: string;
-	relationEntities: RelationEntities;
-}
-type Image = {
-	__typename: "Image";
-	name: string;
-	url: string;
-	height: number;
-	width: number;
-};
-type File = {
-	__typename: "File";
-	id: string;
-	url: string;
-};
-type Emoji = {
-	__typename: "Emoji";
-	id: string;
-	text: string;
-};
-
-type Media = Image | File | Emoji;
-interface RelationEntities {
-	medias: Media[];
-	members: [];
-	posts: [];
-	spaces: string[];
-	tags: string[];
-}
-interface Field {
-	key: string;
-	value: string;
-	relationEntities: RelationEntities;
-}
-interface PostReactionDetail {
-	count: number;
-	reacted: boolean;
-	reaction: string;
-}
-interface PostNode {
-	createdAt: string;
-	id: string;
-	slug: string;
-	mappingFields: [PostMappingField];
-	fields: Field[];
-	language: string;
-	shortContent: string;
-	hasMoreContent: boolean;
-	title: string;
-	description: string;
-	status: string;
-	subscribersCount: number;
-	allowedReactions: [string];
-	reactions: [PostReactionDetail];
-}
-interface GetAPostVariables {
-	id: string;
-}
-interface GetAPostResponse {
-	post: PostNode;
-}
+import { Media, GetAPostResponse, GetAPostVariables } from "./types";
 
 const PostDetails = () => {
 	const { id } = useParams<{ id: string }>();
