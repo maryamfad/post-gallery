@@ -8,13 +8,14 @@
     "compilerOptions": {
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true,
-      "module": "ESNext",
-      "target": "ESNext",
+      "module": "esnext",
+      "target": "esnext",
       "moduleResolution": "node",
-      "jsx": "react",
+      "jsx": "react-jsx",
       "strict": true,
       "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true
-    }
+      "forceConsistentCasingInFileNames": true,
+    },
+    "include": ["src/**/*"]
   }
 

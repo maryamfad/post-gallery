@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from "@apollo/client/core";
 export const GET_A_POST = gql`
 	query GetAPost($id: ID!) {
 		post(id: $id) {

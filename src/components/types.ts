@@ -97,3 +97,13 @@ export type GetAPostVariables = {
 export type GetAPostResponse = {
 	post: Post;
 };
+
+export type AppProps = {
+	posts: GetPostsResponse;
+};
+export type Params = {
+	id: string;
+};
+export type PostGalleryProps = {
+	postsInitialData: GetPostsResponse;
+};

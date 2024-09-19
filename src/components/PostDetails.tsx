@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery } from "@apollo/client/react/hooks/useQuery.js";
+import { useMutation } from "@apollo/client/react/hooks/useMutation";
 import { useParams } from "react-router-dom";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { BiUpvote, BiSolidUpvote } from "react-icons/bi";
@@ -144,7 +145,7 @@ const PostDetails = () => {
 				)}
 			</div>
 			<div className="p-6">
-				{hasLikeButton && (
+				{hasLikeButton ? (
 					<button
 						onClick={() => {
 							reaction = "like";
@@ -164,8 +165,8 @@ const PostDetails = () => {
 							/>
 						)}
 					</button>
-				)}
-				{hasUpvoteButton && (
+				):""}
+				{hasUpvoteButton ? (
 					<button
 						onClick={() => {
 							reaction = "upvote";
@@ -185,7 +186,7 @@ const PostDetails = () => {
 							/>
 						)}
 					</button>
-				)}
+				):""}
 			</div>
 			<div className="p-6">
 				<h5 className="mb-4 mt-4 text-2xl font-medium leading-tight">

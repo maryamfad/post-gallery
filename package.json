@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "jest"
+    "build:client": "vite build",          
+    "build:server": "vite build --ssr src/server/server.tsx",
+   "dev": "vite",
+    "build": "vite build && vite build --ssr src/server/server.tsx",
+    "start": "ts-node dist/server.js"
   },
   "dependencies": {
     "@apollo/client": "^3.11.8",

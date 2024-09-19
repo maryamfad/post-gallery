@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from "@apollo/client/core";
 
 export const ADD_REACTION = gql`
 	mutation addReaction($input: AddReactionInput!, $postId: ID!) {
