@@ -2,7 +2,7 @@ import React from "react";
 import { useQuery } from "@apollo/client/react/hooks/useQuery.js";
 import { useMutation } from "@apollo/client/react/hooks/useMutation";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { BiUpvote, BiSolidUpvote } from "react-icons/bi";
 import { ADD_REACTION } from "../graphql/mutations/addReaction";
@@ -14,18 +14,18 @@ import {
 	GetPostsVariables,
 	GetPostsResponse,
 	PostGalleryProps,
-} from "./types";
+} from "../types";
 
 const isImage = (media: Media) => media.__typename === "Image";
 
-type PostLikesState = Record<string, boolean>;
-
-const PostGallery: React.FC<PostGalleryProps> = ({ postsInitialData }) => {
+const PostGallery: React.FC<PostGalleryProps> = ({
+	postsInitialData,
+	postLikes,
+	postUpvotes,
+	setPostLikes,
+	setPostUpvotes,
+}) => {
 	const [posts, setPosts] = useState<Post[]>([]);
-	const [postLikes, setPostLikes] = useState<PostLikesState>({});
-	const [postUpvotes, setPostUpvotes] = useState<PostLikesState>({});
-
-	// console.log("posts in postGallery", postsInitialData);
 
 	let reaction = "";
 	const variables: GetPostsVariables = {
@@ -36,7 +36,7 @@ const PostGallery: React.FC<PostGalleryProps> = ({ postsInitialData }) => {
 		after: null,
 	};
 
-	const { data, loading, error, fetchMore, refetch } = useQuery<
+	const { data, loading, error, fetchMore } = useQuery<
 		GetPostsResponse,
 		GetPostsVariables
 	>(GET_POSTS, {
@@ -52,8 +52,6 @@ const PostGallery: React.FC<PostGalleryProps> = ({ postsInitialData }) => {
 		},
 	});
 
-	const fetchedPosts =
-		postsInitialData?.posts.nodes || data?.posts.nodes || [];
 	const endCursor =
 		postsInitialData?.posts.pageInfo.endCursor ||
 		data?.posts.pageInfo.endCursor ||
@@ -128,37 +126,6 @@ const PostGallery: React.FC<PostGalleryProps> = ({ postsInitialData }) => {
 		}
 	};
 
-	useEffect(() => {
-		refetch();
-		if (data?.posts) {
-			const likesState = fetchedPosts.reduce((acc, post) => {
-				const hasLike =
-					post.reactions.filter(
-						(reaction) => reaction.reaction === "like"
-					).length > 0;
-
-				return {
-					...acc,
-					[post.id]: hasLike,
-				};
-			}, {});
-
-			const upvotesState = fetchedPosts.reduce((acc, post) => {
-				const hasUpvote =
-					post.reactions.filter(
-						(reaction) => reaction.reaction === "upvote"
-					).length > 0;
-
-				return {
-					...acc,
-					[post.id]: hasUpvote,
-				};
-			}, {});
-
-			setPostLikes(likesState);
-			setPostUpvotes(upvotesState);
-		}
-	}, [data]);
 	if (error) return <p>Error loading posts.</p>;
 	if (loading && !postsInitialData) return <p>Loading...</p>;
 
