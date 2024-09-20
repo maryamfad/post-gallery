@@ -11,7 +11,7 @@ import {
 	GetPostsResponse,
 	GetPostsVariables,
 	Params,
-} from "../components/types";
+} from "../types";
 
 const isProd = process.env.NODE_ENV === "production";
 const PORT = process.env.PORT || 3001;

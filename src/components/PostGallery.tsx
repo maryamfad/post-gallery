@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery } from "@apollo/client/react/hooks/useQuery.js";
 import { useMutation } from "@apollo/client/react/hooks/useMutation";
+
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
@@ -26,7 +27,8 @@ const PostGallery: React.FC<PostGalleryProps> = ({
 	setPostUpvotes,
 }) => {
 	const [posts, setPosts] = useState<Post[]>([]);
-
+	const [seeMoreClicked, setSeeMoreClicked] = useState(false);
+	const [isFetchingMore, setIsFetchingMore] = useState(false);
 	let reaction = "";
 	const variables: GetPostsVariables = {
 		filterBy: [],
@@ -130,6 +132,8 @@ const PostGallery: React.FC<PostGalleryProps> = ({
 	if (loading && !postsInitialData) return <p>Loading...</p>;
 
 	const handleLoadMore = () => {
+		setSeeMoreClicked(true);
+		setIsFetchingMore(true);
 		fetchMore({
 			variables: {
 				after: endCursor,
@@ -142,7 +146,7 @@ const PostGallery: React.FC<PostGalleryProps> = ({
 				];
 
 				setPosts(newPosts);
-
+				setIsFetchingMore(false);
 				return {
 					posts: {
 						...fetchMoreResult.posts,
@@ -152,14 +156,18 @@ const PostGallery: React.FC<PostGalleryProps> = ({
 			},
 		});
 	};
+	console.log("posts", posts);
+	console.log("initial posts", postsInitialData);
 
 	return (
 		<div className="post-gallery container mx-auto p-3 grid sm:grid-cols-1 md:grid-cols-3 gap-8 ">
-			{(postsInitialData.posts.nodes || data?.posts.nodes || [])
-				.length === 0 ? (
+			{(postsInitialData.posts.nodes || posts || []).length === 0 ? (
 				<p className="text-center text-gray-500">No posts available</p>
 			) : (
-				(postsInitialData.posts.nodes || posts).map((post, index) => (
+				(!seeMoreClicked
+					? postsInitialData.posts.nodes || posts
+					: posts
+				).map((post, index) => (
 					<div
 						key={index}
 						className="block max-w-lg rounded-lg bg-white text-surface shadow-secondary-1 dark:bg-surface-dark dark:text-white border border-gray-300 gap-18 shadow-md hover:shadow-lg transition-shadow"
@@ -262,19 +270,24 @@ const PostGallery: React.FC<PostGalleryProps> = ({
 			)}
 
 			<div className="empty"></div>
-
-			{postsInitialData.posts.pageInfo.hasNextPage ||
-			data?.posts.pageInfo.hasNextPage ? (
-				<div>
-					<button
-						onClick={handleLoadMore}
-						className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-					>
-						Load More
-					</button>
-				</div>
+			{isFetchingMore ? (
+				<p>Fetching more...</p>
 			) : (
-				<div></div>
+				<div>
+					{postsInitialData.posts.pageInfo.hasNextPage ||
+					data?.posts.pageInfo.hasNextPage ? (
+						<div>
+							<button
+								onClick={handleLoadMore}
+								className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+							>
+								Load More
+							</button>
+						</div>
+					) : (
+						<div></div>
+					)}
+				</div>
 			)}
 		</div>
 	);
