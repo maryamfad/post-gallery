@@ -1,7 +1,6 @@
 import React from "react";
-import { useQuery } from "@apollo/client/react/hooks/useQuery.js";
+import { useQuery } from "@apollo/client/react/hooks/useQuery";
 import { useMutation } from "@apollo/client/react/hooks/useMutation";
-
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
@@ -53,11 +52,6 @@ const PostGallery: React.FC<PostGalleryProps> = ({
 			console.error("Get posts error:", error);
 		},
 	});
-
-	const endCursor =
-		postsInitialData?.posts.pageInfo.endCursor ||
-		data?.posts.pageInfo.endCursor ||
-		[];
 
 	const [addReaction] = useMutation(ADD_REACTION, {
 		onCompleted: (data) => {
@@ -128,9 +122,10 @@ const PostGallery: React.FC<PostGalleryProps> = ({
 		}
 	};
 
-	if (error) return <p>Error loading posts.</p>;
-	if (loading && !postsInitialData) return <p>Loading...</p>;
-
+	const endCursor =
+		postsInitialData?.posts.pageInfo.endCursor ||
+		data?.posts.pageInfo.endCursor ||
+		[];
 	const handleLoadMore = () => {
 		setSeeMoreClicked(true);
 		setIsFetchingMore(true);
@@ -156,9 +151,10 @@ const PostGallery: React.FC<PostGalleryProps> = ({
 			},
 		});
 	};
-	console.log("posts", posts);
-	console.log("initial posts", postsInitialData);
+console.log("posts",posts);
 
+	if (error) return <p>Error loading posts.</p>;
+	if (loading && !postsInitialData) return <p>Loading...</p>;
 	return (
 		<div className="post-gallery container mx-auto p-3 grid sm:grid-cols-1 md:grid-cols-3 gap-8 ">
 			{(postsInitialData.posts.nodes || posts || []).length === 0 ? (

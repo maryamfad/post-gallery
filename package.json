@@ -9,7 +9,7 @@
 		"dev": "vite",
 		"build": "vite build && vite build --ssr src/server/server.tsx",
 		"start": "ts-node dist/server.js",
-    "test": "jest test"
+		"test": "jest test"
 	},
 	"dependencies": {
 		"@apollo/client": "^3.11.8",

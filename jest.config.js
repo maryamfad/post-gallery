@@ -11,7 +11,12 @@ export default {
 				],
 			},
 		],
+		"^.+\\.(js|jsx|mjs)$": "babel-jest",
 	},
+	transformIgnorePatterns: [
+		"node_modules/(?!@apollo/client)" // Allow Apollo Client files to be transformed
+	  ],
+	preset: 'ts-jest',
 	testEnvironment: "jsdom",
 	setupFilesAfterEnv: ["./test/jest.setup.js"]
 };
